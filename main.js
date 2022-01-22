@@ -1,5 +1,5 @@
 import './style.css'
-import { createShaderProgram, radians, createLoop } from './utils'
+import { createShader, radians, createLoop } from './utils'
 import { mat4 } from 'gl-matrix'
 //import 'webgl-lint'
 import vs from './shader.vs?raw'
@@ -23,27 +23,23 @@ window.onload = () => {
   const mView = mat4.create()
   const mModel = mat4.create()
 
-  mat4.perspective(mProjection, radians(45), canvas.width/canvas.height, 0.001, 100)
+  const aspect = canvas.width/canvas.height
+  mat4.perspective(mProjection, radians(45), aspect, 0.001, 100)
   mat4.lookAt(mView, [0,0,5], [0,0,0], [0,1,0])
 
-  const program = createShaderProgram(gl, vs.trim(), fs.trim())
-
-  const location = {}
-  location.mProjection = gl.getUniformLocation(program, 'mProjection')
-  location.mView = gl.getUniformLocation(program, 'mView')
-  location.mModel = gl.getUniformLocation(program, 'mModel')
+  const shader = createShader(gl, vs.trim(), fs.trim())
 
   const render = () => {
     mat4.rotateY(mModel, mModel, radians(0.5))
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-    gl.useProgram(program)
-    gl.uniformMatrix4fv(location.mProjection, false, mProjection)
-    gl.uniformMatrix4fv(location.mView, false, mView)
-    gl.uniformMatrix4fv(location.mModel, false, mModel)
+    shader.begin()
+    shader.setMatrix4('mProjection', mProjection)
+    shader.setMatrix4('mView', mView)
+    shader.setMatrix4('mModel', mModel)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-    gl.useProgram(null)
+    shader.end()
   }
 
   const loop = createLoop(() => render())
